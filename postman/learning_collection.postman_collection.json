@@ -1,0 +1,183 @@
+{
+  "info": {
+    "name": "Learning Collection",
+    "_postman_id": "f6c9b6d9-learning-collection",
+    "description": "Postman collection for testing the `learning` MongoDB collection (health check + CRUD). Set the environment variable `baseUrl` to your server, e.g. http://localhost:3000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        },
+        "description": "Simple server health endpoint."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Health: status 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Health: has json\", function () {",
+              "    pm.response.to.be.json;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Learning (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Intro to MongoDB\",\n  \"description\": \"Basics of MongoDB and CRUD operations\",\n  \"author\": \"Instructor\",\n  \"tags\": [\"mongodb\", \"database\", \"nosql\"],\n  \"published\": true\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/learning", "host": ["{{baseUrl}}"], "path": ["learning"] },
+        "description": "Create a new learning document. The response test will save the created id to the environment variable `learningId`."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Create: status 201 or 200\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200,201]);",
+              "});",
+              "var json = pm.response.json();",
+              "if (json && (json._id || json.id || json.id_str)) {",
+              "    var id = json._id || json.id || json.id_str;",
+              "    pm.environment.set(\"learningId\", id);",
+              "    console.log(\"Saved learningId=\"+id);",
+              "}",
+              "pm.test(\"Create: has id in response\", function () {",
+              "    pm.expect(json).to.be.an('object');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get All Learning (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/learning", "host": ["{{baseUrl}}"], "path": ["learning"] },
+        "description": "Retrieve all learning documents."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Get all: status 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Get all: returns array\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Learning By Id (GET)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/learning/{{learningId}}", "host": ["{{baseUrl}}"], "path": ["learning", "{{learningId}}"] },
+        "description": "Retrieve a single learning document by id. Ensure `learningId` is set (created by POST)."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Get by id: status 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Get by id: response object\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json).to.be.an('object');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Learning (PUT)",
+      "request": {
+        "method": "PUT",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Intro to MongoDB - Updated\",\n  \"description\": \"Updated description for testing update.\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/learning/{{learningId}}", "host": ["{{baseUrl}}"], "path": ["learning", "{{learningId}}"] },
+        "description": "Update an existing learning document by id. Ensure `learningId` is set."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Update: status 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Update: response contains updated fields\", function () {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.title || json.data && json.data.title).to.exist;",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Learning (DELETE)",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": { "raw": "{{baseUrl}}/learning/{{learningId}}", "host": ["{{baseUrl}}"], "path": ["learning", "{{learningId}}"] },
+        "description": "Delete a learning document by id. Ensure `learningId` is set."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Delete: status 200 or 204\", function () {",
+              "    pm.expect(pm.response.code).to.be.oneOf([200,204]);",
+              "});",
+              "pm.environment.unset(\"learningId\");"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": []
+}
